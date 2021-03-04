@@ -33,6 +33,8 @@ function Payment() {
     getClientSecret();
   }, [basket]);
 
+  console.log('THE SECRET IS >>>', clientSecret);
+
   const handleSubmit = async (event) => {
     // all the stripe code
     event.preventDefault();
@@ -50,7 +52,7 @@ function Payment() {
         setError(null);
         setProcessing(false);
 
-        history.replaceState('/orders');
+        history.replace('/orders');
       });
   };
 
