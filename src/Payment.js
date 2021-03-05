@@ -4,6 +4,7 @@ import { useStateValue } from './StateProvider';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getBasketTotal } from './reducer';
 import { useHistory } from 'react-router-dom';
+import { db } from './firebase';
 import CurrencyFormat from 'react-currency-format';
 import CheckoutProduct from './CheckoutProduct';
 import axios from './axios';
@@ -15,7 +16,7 @@ function Payment() {
   const [processing, setProcessing] = useState('');
   const [error, setError] = useState(null);
   const [disabled, setDisabled] = useState(true);
-  const [clientSecret, setClientSecret] = useState(true);
+  const [clientSecret, setClientSecret] = useState('');
 
   const stripe = useStripe();
   const elements = useElements();
@@ -33,8 +34,6 @@ function Payment() {
     getClientSecret();
   }, [basket]);
 
-  console.log('THE SECRET IS >>>', clientSecret);
-
   const handleSubmit = async (event) => {
     // all the stripe code
     event.preventDefault();
@@ -48,9 +47,30 @@ function Payment() {
       })
       .then(({ paymentIntent }) => {
         // paymentIntent = payment confirmation
+        console.log(paymentIntent);
+        db.collection('users')
+          .doc(user?.uid)
+          .collection('orders')
+          .doc(paymentIntent?.id)
+          .set({
+            basket: basket,
+            amount: paymentIntent?.amount,
+            created: paymentIntent?.created,
+          })
+          .then(() => {
+            console.log('Document successfully written!');
+          })
+          .catch((error) => {
+            console.error('Error writing document: ', error);
+          });
+
         setSucceeded(true);
         setError(null);
         setProcessing(false);
+
+        dispatch({
+          type: 'EMPTY_BASKET',
+        });
 
         history.replace('/orders');
       });
